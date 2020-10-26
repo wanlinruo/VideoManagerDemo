@@ -16,6 +16,7 @@ import com.tuya.smart.videomanagerdemo.Config.Companion.MSG_UPDATE
 import com.tuya.smart.videomanagerdemo.Config.Companion.maxSelection
 import com.tuya.smart.videomanagerdemo.R
 import com.tuya.smart.videomanagerdemo.getVideoDuration
+import com.tuya.smart.videomanagerdemo.helper.ThumbUtil
 import com.tuya.smart.videomanagerdemo.log
 import com.tuya.smart.videomanagerdemo.player.VideoPlayTimeController
 import com.tuya.smart.videomanagerdemo.player.VideoPlayer
@@ -24,6 +25,7 @@ import com.tuya.smart.videomanagerdemo.ui.ClipContainer
 import kotlinx.android.synthetic.main.activity_video_clip.*
 import java.io.File
 import java.text.DecimalFormat
+import kotlin.math.ceil
 
 class VideoClipActivity : AppCompatActivity(), ClipContainer.Callback {
 
@@ -35,9 +37,11 @@ class VideoClipActivity : AppCompatActivity(), ClipContainer.Callback {
     private lateinit var videoPathInput: String
 
     // 播放器实例
-    var videoPlayer: VideoPlayer? = null
+    private var videoPlayer: VideoPlayer? = null
 
-    var videoPlayTimeController: VideoPlayTimeController? = null
+    private var videoPlayTimeController: VideoPlayTimeController? = null
+
+    private val thumbUtil: ThumbUtil = ThumbUtil(this)
 
     private var millsecPerThumbnail = 1000
 
@@ -84,7 +88,7 @@ class VideoClipActivity : AppCompatActivity(), ClipContainer.Callback {
 
     override fun onDestroy() {
         super.onDestroy()
-        player_view_exo_thumbnail.release()
+        thumbUtil.release()
         videoPlayTimeController?.stop()
     }
 
@@ -130,7 +134,7 @@ class VideoClipActivity : AppCompatActivity(), ClipContainer.Callback {
         videoPlayTimeController = VideoPlayTimeController(videoPlayer!!)
         videoPlayTimeController?.start()
 
-        player_view_exo_thumbnail.setDataSource(
+        thumbUtil.getThumb(
             videoPathInput,
             millsecPerThumbnail,
             thumbnailCount,
