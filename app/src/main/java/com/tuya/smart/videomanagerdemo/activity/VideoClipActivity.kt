@@ -25,7 +25,8 @@ import com.tuya.smart.videomanagerdemo.ui.ClipContainer
 import kotlinx.android.synthetic.main.activity_video_clip.*
 import java.io.File
 import java.text.DecimalFormat
-import kotlin.math.ceil
+import kotlin.math.max
+import kotlin.math.min
 
 class VideoClipActivity : AppCompatActivity(), ClipContainer.Callback {
 
@@ -47,9 +48,9 @@ class VideoClipActivity : AppCompatActivity(), ClipContainer.Callback {
 
     private var thumbnailCount = 0
 
-    private var startMillSec: Long = 0
+    private var mStartMillSec: Long = 0
 
-    private var endMillSec: Long = 0
+    private var mEndMillSec: Long = 0
 
     private var frozontime = 0L
 
@@ -107,7 +108,7 @@ class VideoClipActivity : AppCompatActivity(), ClipContainer.Callback {
 
         mediaDuration = getVideoDuration(this, videoPathInput)
         Log.d(TAG, "onProcessCompleted mediaDuration:$mediaDuration")
-        endMillSec = if (mediaDuration > maxSelection) {
+        mEndMillSec = if (mediaDuration > maxSelection) {
             maxSelection
         } else {
             mediaDuration
@@ -159,7 +160,7 @@ class VideoClipActivity : AppCompatActivity(), ClipContainer.Callback {
     private fun updatePlayPosition() {
 
         val currentPosition = getPlayerCurrentPosition()
-        if (currentPosition > endMillSec) {
+        if (currentPosition > mEndMillSec) {
             seekToPosition(0)
         } else {
             clipContainer.setProgress(currentPosition.toLong(), frozontime)
@@ -191,22 +192,22 @@ class VideoClipActivity : AppCompatActivity(), ClipContainer.Callback {
 
     override fun onSelectionChang(
         totalCount: Int,
-        _startMillSec: Long,
-        _endMillSec: Long,
+        startMillSec: Long,
+        endMillSec: Long,
         finished: Boolean
     ) {
-        Log.d(TAG, "onSelectionChang ...startMillSec:$_startMillSec, endMillSec:$_endMillSec")
-        this.startMillSec = _startMillSec
-        this.endMillSec = _endMillSec
+        Log.d(TAG, "onSelectionChang ...startMillSec:$startMillSec, endMillSec:$endMillSec")
+        this.mStartMillSec = startMillSec
+        this.mEndMillSec = endMillSec
 
-        var time = (endMillSec - startMillSec)
+        var time = (mEndMillSec - mStartMillSec)
         if (time > mediaDuration) {
             time = mediaDuration
         }
         adjustSelection()
 
         val selSec = time / 1000f
-        toast_msg_tv.text = "已截取${secFormat.format(selSec)}s, [$startMillSec - $endMillSec]"
+        toast_msg_tv.text = "已截取${secFormat.format(selSec)}s, [$mStartMillSec - $mEndMillSec]"
         toast_msg_tv.visibility = View.VISIBLE
 
         this.mHandler.removeMessages(MSG_UPDATE)
@@ -218,12 +219,12 @@ class VideoClipActivity : AppCompatActivity(), ClipContainer.Callback {
             pausePlayer()
         }
 
-        seekToPosition(startMillSec)
+        seekToPosition(mStartMillSec)
 
         if (finished) {
             frozontime = System.currentTimeMillis() + 500
             startPlayer()
-            videoPlayTimeController?.setPlayTimeRange(startMillSec, endMillSec)
+            videoPlayTimeController?.setPlayTimeRange(mStartMillSec, mEndMillSec)
         }
     }
 
@@ -251,17 +252,17 @@ class VideoClipActivity : AppCompatActivity(), ClipContainer.Callback {
     }
 
     private fun adjustSelection() {
-        if (endMillSec > mediaDuration) {
-            endMillSec = mediaDuration
+        if (mEndMillSec > mediaDuration) {
+            mEndMillSec = mediaDuration
         }
-        if (startMillSec < 0) {
-            startMillSec = 0
+        if (mStartMillSec < 0) {
+            mStartMillSec = 0
         }
 
-        if (startMillSec + Config.minSelection > endMillSec && endMillSec < mediaDuration) {
-            endMillSec = Math.min(startMillSec + Config.minSelection, mediaDuration)
-            if (startMillSec + Config.minSelection > endMillSec && startMillSec > 0) {
-                startMillSec = Math.max(0, endMillSec - Config.minSelection)
+        if (mStartMillSec + Config.minSelection > mEndMillSec && mEndMillSec < mediaDuration) {
+            mEndMillSec = min(mStartMillSec + Config.minSelection, mediaDuration)
+            if (mStartMillSec + Config.minSelection > mEndMillSec && mStartMillSec > 0) {
+                mStartMillSec = max(0, mEndMillSec - Config.minSelection)
             }
         }
     }
